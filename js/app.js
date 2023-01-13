@@ -1,6 +1,12 @@
 const resultado = document.querySelector('#resultado')
 
 const formulario = document.querySelector('#formulario')
+const paginacion = document.querySelector('#paginacion')
+
+const registrosPorPagina = 40
+let totalPaginas
+let iterador
+let paginaActual = 1
 
 
 window.onload = () => {
@@ -16,16 +22,35 @@ function validarFormulario(e){
         return
     }
 
-    buscarImagenes(terminoBusqueda)
+    buscarImagenes()
 }
 
 
-function buscarImagenes(termino){
+function buscarImagenes(){
+    const termino = document.querySelector('#termino').value;
     const key = '32809509-37cc96e1db6942ab03c4ef693'
-    const url = `https://pixabay.com/api/?key=${key}&q=${termino}`
+    const url = `https://pixabay.com/api/?key=${key}&q=${termino}&per_page=${registrosPorPagina}&page=${paginaActual}`
     fetch(url)
         .then(resp => resp.json())
-        .then(data => mostrarImagenes(data.hits))
+        .then(data => {
+            
+            totalPaginas = calcularPaginas(data.totalHits)
+            console.log(totalPaginas)
+            mostrarImagenes(data.hits)
+        })
+        
+    }
+
+//Generador que va a registrar la cantidad de elementos de acuerdo a las paginas
+function *crearPaginador(total){
+    for(let i=1;i<=total;i++){
+        yield i
+    }
+}
+    
+
+function calcularPaginas(total){
+    return parseInt(Math.ceil(total/ registrosPorPagina))
 
 }
  function mostrarImagenes(imagenes){
@@ -58,6 +83,40 @@ function buscarImagenes(termino){
         
     });
 
+    //limpiar paginador
+    while(paginacion.firstChild){
+        paginacion.removeChild(paginacion.firstChild)
+    }
+
+    imprimirPaginador()
+
+     
+    
+
+ }
+
+ function imprimirPaginador(){
+    iterador = crearPaginador(totalPaginas)
+
+    while(true){
+        const {value, done} = iterador.next()
+
+        if(done) return
+
+        //crea un boton
+        const boton = document.createElement('a')
+
+        boton.href = '#'
+        boton.dataset.pagina = value
+        boton.textContent = value
+        boton.classList.add('siguiente','bg-yellow-400','px-4','py-1','mr-2','font-bold','mb-10','uppercase','rounded')
+        boton.onclick = () =>{
+            paginaActual = value
+            buscarImagenes(paginaActual)
+        }
+        paginacion.appendChild(boton)
+
+    }
  }
 
 function mostrarAlerta(mensaje){
